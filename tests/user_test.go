@@ -27,6 +27,7 @@ func TestCreateUser(t *testing.T) {
 	// Convert the JSON response to a map
 	var response models.UserResponse
 	json.Unmarshal([]byte(w.Body.String()), &response)
+
 	// Grab the value & whether or not it exists
 	username := response.Username
 	assert.Equal(t, "timmy", username)
