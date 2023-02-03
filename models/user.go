@@ -59,18 +59,22 @@ func (factory UserFactory) Create(c *gin.Context) {
 	}
 
 	query := `INSERT INTO users (username, password, score) VALUES ($1, $2, $3);`
-	id := 0
-	rows, err := factory.Storage.QueryContext(context.Background(), query, newUser.Username, hashedPassword, 0)
+	_, err = factory.Storage.QueryContext(context.Background(), query, newUser.Username, hashedPassword, 0)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	rows.Scan(&id)
 
-	query = `SELECT id, username, score FROM users WHERE id=$1;`
-	row := factory.Storage.QueryRowContext(context.Background(), query, id)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
 
+	query = `SELECT id, username, score FROM users WHERE username=$1;`
+	row := factory.Storage.QueryRowContext(context.Background(), query, newUser.Username)
+
+	var id int
 	var username string
 	var score int
 
