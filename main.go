@@ -14,7 +14,7 @@ const (
 	port     = 5432
 	user     = "postgres"
 	password = "password"
-	dbname   = "newsletter"
+	dbname   = "postgres"
 )
 
 func main() {
@@ -37,7 +37,7 @@ func main() {
 	router := gin.Default()
 
 	// router.POST("/login", controllers.LoginUser)
-	// router.POST("/users", controllers.CreateUser)
+	router.POST("/users", models.UserFactory{Storage: db}.Create)
 	router.GET("/users", models.UserFactory{Storage: db}.Get)
 
 	router.Run("localhost:8080")

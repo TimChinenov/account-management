@@ -1,6 +1,6 @@
 -- Create Users Table
 CREATE TABLE users(
-    id uuid NOT NULL,
+    id SERIAL NOT NULL,
     PRIMARY KEY (id),
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,

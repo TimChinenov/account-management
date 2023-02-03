@@ -27,4 +27,4 @@ done
 
 >&2 echo "Postgres is up and running on port ${DB_PORT}!"
 
-PGPASSWORD="${DB_PASSWORD}"  psql -U ${DB_USER} -d ${DB_NAME} -a -f "/Users/timchinenov/Dev/account-management/migrations/1_create_user_table.sql"
+PGPASSWORD="${DB_PASSWORD}" psql -h "localhost" -U "${DB_USER}" -p "${DB_PORT}" -d "postgres" -a -f "/Users/timchinenov/Dev/account-management/migrations/1_create_user_table.sql"
