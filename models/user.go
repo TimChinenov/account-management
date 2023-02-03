@@ -44,13 +44,6 @@ func (factory UserFactory) Create(c *gin.Context) {
 		return
 	}
 
-	// for _, user := range users {
-	// 	if user.Username == newUser.Username {
-	// 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "username already exists"})
-	// 		return
-	// 	}
-	// }
-
 	hashedPassword, err := services.HashPassword(newUser.Password)
 
 	if err != nil {
@@ -60,11 +53,6 @@ func (factory UserFactory) Create(c *gin.Context) {
 
 	query := `INSERT INTO users (username, password, score) VALUES ($1, $2, $3);`
 	_, err = factory.Storage.QueryContext(context.Background(), query, newUser.Username, hashedPassword, 0)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
-	}
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
