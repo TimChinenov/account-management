@@ -70,6 +70,7 @@ func (factory UserFactory) Create(c *gin.Context) {
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
 	}
 
 	var userResponse UserResponse = UserResponse{ID: id, Username: username, Score: score}
@@ -78,6 +79,19 @@ func (factory UserFactory) Create(c *gin.Context) {
 }
 
 func (factory UserFactory) Get(c *gin.Context) {
-	c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "username already exists"})
-	return
+	userID := c.Param("id")
+
+	query := `SELECT id, username, score FROM users WHERE id=$1;`
+	row := factory.Storage.QueryRowContext(context.Background(), query, userID)
+
+	var userResponse UserResponse
+
+	err := row.Scan(&userResponse.ID, &userResponse.Username, &userResponse.Score)
+
+	if err != nil || userResponse.ID == 0 || userResponse.Username == "" {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusFound, userResponse)
 }

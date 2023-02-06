@@ -38,7 +38,7 @@ func main() {
 
 	// router.POST("/login", controllers.LoginUser)
 	router.POST("/users", models.UserFactory{Storage: db}.Create)
-	router.GET("/users", models.UserFactory{Storage: db}.Get)
+	router.GET("/users/:id", models.UserFactory{Storage: db}.Get)
 
 	router.Run("localhost:8080")
 }
