@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"example/account-management/services"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -94,4 +95,55 @@ func (factory UserFactory) Get(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusFound, userResponse)
+}
+
+func (factory UserFactory) Search(c *gin.Context) {
+	usernameSearch, err := c.GetQuery("username")
+	usernameSearch = strings.TrimSpace(usernameSearch)
+
+	if !err || usernameSearch == "" {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "no parameters found"})
+		return
+	}
+
+	query := `SELECT id, username, score FROM users WHERE username LIKE '%' || $1 || '%' LIMIT 10`
+	rows, queryErr := factory.Storage.QueryContext(context.Background(), query, usernameSearch)
+
+	if queryErr != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to find users"})
+		return
+	}
+
+	users := make([]UserResponse, 0)
+	for rows.Next() {
+		var user UserResponse
+		queryErr = rows.Scan(&user.ID, &user.Username, &user.Score)
+
+		if queryErr != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to parse users"})
+			return
+		}
+
+		users = append(users, user)
+	}
+
+	queryErr = rows.Err()
+	if queryErr != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to parse users"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, users)
+}
+
+func (factory UserFactory) UpdatePoints(c *gin.Context) {
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "incomplete"})
+}
+
+func (factory UserFactory) Login(c *gin.Context) {
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "incomplete"})
+}
+
+func (factory UserFactory) Logout(c *gin.Context) {
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "incomplete"})
 }

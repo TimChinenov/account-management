@@ -36,9 +36,13 @@ func main() {
 
 	router := gin.Default()
 
-	// router.POST("/login", controllers.LoginUser)
 	router.POST("/users", models.UserFactory{Storage: db}.Create)
 	router.GET("/users/:id", models.UserFactory{Storage: db}.Get)
+	router.GET("/users", models.UserFactory{Storage: db}.Search)
+
+	router.PATCH("/users/:id/points", models.UserFactory{Storage: db}.UpdatePoints)
+	router.POST("/users/login", models.UserFactory{Storage: db}.Login)
+	router.POST("/users/logout", models.UserFactory{Storage: db}.Logout)
 
 	router.Run("localhost:8080")
 }
