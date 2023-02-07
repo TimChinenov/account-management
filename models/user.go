@@ -110,7 +110,7 @@ func (factory UserFactory) Search(c *gin.Context) {
 	rows, queryErr := factory.Storage.QueryContext(context.Background(), query, usernameSearch)
 
 	if queryErr != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to find users"})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to search"})
 		return
 	}
 
