@@ -30,7 +30,7 @@ type UserRequest struct {
 }
 
 type UpdateScoreRequst struct {
-	Score int
+	Score int `json:"score"`
 }
 
 type Storage interface {
@@ -93,7 +93,7 @@ func (factory UserFactory) Get(c *gin.Context) {
 	}
 
 	query := `SELECT id, username, score FROM users WHERE id=$1;`
-	row := factory.Storage.QueryRowContext(context.Background(), query, userID)
+	factory.Storage.QueryRowContext(context.Background(), query, userID)
 
 	var userResponse UserResponse
 
