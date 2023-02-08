@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"example/account-management/services"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,10 @@ type UserResponse struct {
 type UserRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type UpdateScoreRequst struct {
+	Score int
 }
 
 type Storage interface {
@@ -80,14 +85,19 @@ func (factory UserFactory) Create(c *gin.Context) {
 }
 
 func (factory UserFactory) Get(c *gin.Context) {
-	userID := c.Param("id")
+	userID, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to parse user id"})
+		return
+	}
 
 	query := `SELECT id, username, score FROM users WHERE id=$1;`
 	row := factory.Storage.QueryRowContext(context.Background(), query, userID)
 
 	var userResponse UserResponse
 
-	err := row.Scan(&userResponse.ID, &userResponse.Username, &userResponse.Score)
+	userResponse, err = factory.getUserById(userID)
 
 	if err != nil || userResponse.ID == 0 || userResponse.Username == "" {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
@@ -137,7 +147,35 @@ func (factory UserFactory) Search(c *gin.Context) {
 }
 
 func (factory UserFactory) UpdatePoints(c *gin.Context) {
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "incomplete"})
+	userID, err := strconv.Atoi(c.Param("id"))
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "failed to parse user id"})
+		return
+	}
+
+	var scoreRequest UpdateScoreRequst
+
+	if err := c.BindJSON((&scoreRequest)); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to parse score"})
+		return
+	}
+
+	query := `UPDATE users SET score = $1 WHERE id = $2`
+	row := factory.Storage.QueryRowContext(context.Background(), query, scoreRequest.Score, userID)
+
+	if row.Err() != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to update score"})
+	}
+
+	userResponse, err := factory.getUserById(userID)
+
+	if err != nil || userResponse.ID == 0 || userResponse.Username == "" {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusFound, userResponse)
 }
 
 func (factory UserFactory) Login(c *gin.Context) {
@@ -146,4 +184,15 @@ func (factory UserFactory) Login(c *gin.Context) {
 
 func (factory UserFactory) Logout(c *gin.Context) {
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "incomplete"})
+}
+
+func (factory UserFactory) getUserById(userID int) (UserResponse, error) {
+	query := `SELECT id, username, score FROM users WHERE id=$1;`
+	row := factory.Storage.QueryRowContext(context.Background(), query, userID)
+
+	var userResponse UserResponse
+
+	err := row.Scan(&userResponse.ID, &userResponse.Username, &userResponse.Score)
+
+	return userResponse, err
 }
