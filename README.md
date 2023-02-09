@@ -18,3 +18,5 @@ https://github.com/Qovery/simple-example-gin-with-postgresql/blob/master/db/db.g
 
 Notes on dependency inject:
 https://stackoverflow.com/questions/46141898/what-is-the-best-way-to-have-dependency-injection-in-golang
+
+### Guide on session handling
