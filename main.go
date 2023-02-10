@@ -5,6 +5,8 @@ import (
 	"example/account-management/models"
 	"fmt"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 )
@@ -34,7 +36,10 @@ func main() {
 		panic(err)
 	}
 
+	store := cookie.NewStore([]byte("tim"))
+
 	router := gin.Default()
+	router.Use(sessions.Sessions("mysession", store))
 
 	router.POST("/users", models.UserFactory{Storage: db}.Create)
 	router.GET("/users/:id", models.UserFactory{Storage: db}.Get)
@@ -43,6 +48,9 @@ func main() {
 
 	router.POST("/users/login", models.UserFactory{Storage: db}.Login)
 	router.POST("/users/logout", models.UserFactory{Storage: db}.Logout)
+
+	router.GET("/session/get")
+	router.GET("/session/set")
 
 	router.Run("localhost:8080")
 }
