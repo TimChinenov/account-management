@@ -179,7 +179,38 @@ func (factory UserFactory) UpdatePoints(c *gin.Context) {
 }
 
 func (factory UserFactory) Login(c *gin.Context) {
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "incomplete"})
+	var loginUser UserRequest
+
+	if err := c.BindJSON((&loginUser)); err != nil {
+		return
+	}
+
+	hashedPassword, err := services.HashPassword(loginUser.Password)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password or username"})
+		return
+	}
+
+	query := `SELECT username, password FROM users WHERE username = $1`
+	row := factory.Storage.QueryRowContext(context.Background(), query, loginUser.Username)
+
+	if row.Err() != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password or username"})
+		return
+	}
+
+	var foundUsername string
+	var foundPassword string
+
+	row.Scan(&foundUsername, &foundPassword)
+
+	if !services.CheckPasswordHash(hashedPassword, foundPassword) {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password or username"})
+		return
+	}
+
+	// TODO: add to session
 }
 
 func (factory UserFactory) Logout(c *gin.Context) {
