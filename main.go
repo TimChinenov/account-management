@@ -5,6 +5,7 @@ import (
 	"example/account-management/models"
 	"fmt"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -41,12 +42,20 @@ func main() {
 	router := gin.Default()
 	router.Use(sessions.Sessions("mysession", store))
 
-	router.POST("/users", models.UserFactory{Storage: db}.Create)
+	// TODO: delete this in production
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:  []string{"http://localhost:3000"},
+		AllowMethods:  []string{"PATCH", "POST", "GET"},
+		AllowHeaders:  []string{"Origin", "Content-Type"},
+		ExposeHeaders: []string{"Content-Type"},
+	}))
+
+	router.POST("/users/", models.UserFactory{Storage: db}.Create)
 	router.GET("/users/:id", models.UserFactory{Storage: db}.Get)
 	router.GET("/users", models.UserFactory{Storage: db}.Search)
 	router.PATCH("/users/:id/points", models.UserFactory{Storage: db}.UpdatePoints)
 
-	router.POST("/users/login", models.UserFactory{Storage: db}.Login)
+	router.POST("/users/login/", models.UserFactory{Storage: db}.Login)
 	router.POST("/users/logout", models.UserFactory{Storage: db}.Logout)
 
 	router.GET("/session/get")
