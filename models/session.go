@@ -1,6 +1,7 @@
 package models
 
 import (
+	"crypto/sha256"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -19,10 +20,14 @@ func GetSession(c *gin.Context) {
 	c.String(200, value.(string))
 }
 
-func SetSession(c *gin.Context) {
+func SetSession(c *gin.Context, username string) {
 	session := sessions.Default(c)
 
-	session.Set("user", "tim")
+	hasher := sha256.New()
+	hasher.Write([]byte(username))
+	token := hasher.Sum(nil)
+
+	session.Set(username, token)
 	err := session.Save()
 
 	if err != nil {

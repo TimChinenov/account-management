@@ -210,7 +210,7 @@ func (factory UserFactory) Login(c *gin.Context) {
 		return
 	}
 
-	// TODO: add to session
+	SetSession(c, foundUsername)
 }
 
 func (factory UserFactory) Logout(c *gin.Context) {

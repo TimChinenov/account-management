@@ -58,8 +58,8 @@ func main() {
 	router.POST("/users/login/", models.UserFactory{Storage: db}.Login)
 	router.POST("/users/logout", models.UserFactory{Storage: db}.Logout)
 
-	router.GET("/session/get")
-	router.GET("/session/set")
+	// router.GET("/session/get")
+	// router.GET("/session/set")
 
 	router.Run("localhost:8080")
 }
