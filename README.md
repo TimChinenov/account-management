@@ -20,3 +20,5 @@ Notes on dependency inject:
 https://stackoverflow.com/questions/46141898/what-is-the-best-way-to-have-dependency-injection-in-golang
 
 ### Guide on session handling
+JWT explanation
+https://seefnasrul.medium.com/create-your-first-go-rest-api-with-jwt-authentication-in-gin-framework-dbe5bda72817

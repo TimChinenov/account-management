@@ -50,16 +50,17 @@ func main() {
 		ExposeHeaders: []string{"Content-Type"},
 	}))
 
-	router.POST("/users/", models.UserFactory{Storage: db}.Create)
-	router.GET("/users/:id", models.UserFactory{Storage: db}.Get)
-	router.GET("/users", models.UserFactory{Storage: db}.Search)
-	router.PATCH("/users/:id/points", models.UserFactory{Storage: db}.UpdatePoints)
+	public := router.Group("/api")
+	public.POST("/users/", models.UserFactory{Storage: db}.Create)
+	public.GET("/users/:id", models.UserFactory{Storage: db}.Get)
+	public.GET("/users", models.UserFactory{Storage: db}.Search)
+	public.PATCH("/users/:id/points", models.UserFactory{Storage: db}.UpdatePoints)
 
-	router.POST("/users/login/", models.UserFactory{Storage: db}.Login)
-	router.POST("/users/logout", models.UserFactory{Storage: db}.Logout)
-
-	// router.GET("/session/get")
-	// router.GET("/session/set")
+	protected := router.Group("/api/admin")
+	protected.Use(models.JwtAuthMiddleware())
+	protected.POST("/login/", models.UserFactory{Storage: db}.Login)
+	protected.POST("/logout", models.UserFactory{Storage: db}.Logout)
 
 	router.Run("localhost:8080")
+
 }
