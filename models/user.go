@@ -97,7 +97,7 @@ func (factory UserFactory) Get(c *gin.Context) {
 
 	var userResponse UserResponse
 
-	userResponse, err = factory.getUserById(userID)
+	userResponse, err = factory.GetUserById(userID)
 
 	if err != nil || userResponse.ID == 0 || userResponse.Username == "" {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
@@ -168,7 +168,7 @@ func (factory UserFactory) UpdatePoints(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to update score"})
 	}
 
-	userResponse, err := factory.getUserById(userID)
+	userResponse, err := factory.GetUserById(userID)
 
 	if err != nil || userResponse.ID == 0 || userResponse.Username == "" {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "user not found"})
@@ -209,15 +209,13 @@ func (factory UserFactory) Login(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password or username"})
 		return
 	}
-
-	SetSession(c, foundUsername)
 }
 
 func (factory UserFactory) Logout(c *gin.Context) {
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "incomplete"})
 }
 
-func (factory UserFactory) getUserById(userID int) (UserResponse, error) {
+func (factory UserFactory) GetUserById(userID int) (UserResponse, error) {
 	query := `SELECT id, username, score FROM users WHERE id=$1;`
 	row := factory.Storage.QueryRowContext(context.Background(), query, userID)
 

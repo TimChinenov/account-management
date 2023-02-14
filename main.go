@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 )
@@ -37,10 +35,7 @@ func main() {
 		panic(err)
 	}
 
-	store := cookie.NewStore([]byte("tim"))
-
 	router := gin.Default()
-	router.Use(sessions.Sessions("mysession", store))
 
 	// TODO: delete this in production
 	router.Use(cors.New(cors.Config{
@@ -55,11 +50,12 @@ func main() {
 	public.GET("/users/:id", models.UserFactory{Storage: db}.Get)
 	public.GET("/users", models.UserFactory{Storage: db}.Search)
 	public.PATCH("/users/:id/points", models.UserFactory{Storage: db}.UpdatePoints)
+	public.POST("/login/", models.UserFactory{Storage: db}.Login)
+	public.POST("/logout", models.UserFactory{Storage: db}.Logout)
 
 	protected := router.Group("/api/admin")
 	protected.Use(models.JwtAuthMiddleware())
-	protected.POST("/login/", models.UserFactory{Storage: db}.Login)
-	protected.POST("/logout", models.UserFactory{Storage: db}.Logout)
+	protected.GET("/user", models.UserFactory{Storage: db}.CurrentUser)
 
 	router.Run("localhost:8080")
 
