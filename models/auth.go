@@ -21,5 +21,5 @@ func (factory UserFactory) CurrentUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "success", "data ": user})
+	c.JSON(http.StatusOK, gin.H{"message": "success", "data": user})
 }
