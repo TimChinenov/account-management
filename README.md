@@ -14,7 +14,7 @@ curl http://localhost:8080/api/login \
 
 curl http://localhost:8080/api/admin/user \
     --include \
-	--header "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2NzY1MzQ3MjAsInVzZXJfaWQiOjI1fQ.GEeXa5kCE9dEMywXdlTLSs7iNtREcgJmeGc-Vp7KBL0"
+	--header "Authorization: Bearer <token>"
     --request "GET"
 
 ### Useful Sources
