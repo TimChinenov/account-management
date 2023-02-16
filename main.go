@@ -46,11 +46,11 @@ func main() {
 	}))
 
 	public := router.Group("/api")
-	public.POST("/users/", models.UserFactory{Storage: db}.Create)
+	public.POST("/users", models.UserFactory{Storage: db}.Create)
 	public.GET("/users/:id", models.UserFactory{Storage: db}.Get)
 	public.GET("/users", models.UserFactory{Storage: db}.Search)
 	public.PATCH("/users/:id/points", models.UserFactory{Storage: db}.UpdatePoints)
-	public.POST("/login/", models.UserFactory{Storage: db}.Login)
+	public.POST("/login", models.UserFactory{Storage: db}.Login)
 	public.POST("/logout", models.UserFactory{Storage: db}.Logout)
 
 	protected := router.Group("/api/admin")

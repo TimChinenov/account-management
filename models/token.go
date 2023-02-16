@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CreateToken(userId string) (string, error) {
+func CreateToken(userId int) (string, error) {
 	tokenLifespan := 60 * 60 * 1000
 
 	claims := jwt.MapClaims{}
@@ -37,10 +37,11 @@ func IsTokenValid(c *gin.Context) error {
 }
 
 func ExtractToken(c *gin.Context) string {
-	token := c.Query("token")
-	if token != "" {
-		return token
-	}
+	// token := c.Query("token")
+	// fmt.Println(token)
+	// if token != "" {
+	// 	return token
+	// }
 
 	bearerToken := c.Request.Header.Get("Authorization")
 	if len(strings.Split(bearerToken, " ")) == 2 {
@@ -62,6 +63,7 @@ func ExtractTokenId(c *gin.Context) (uint, error) {
 		return 0, err
 	}
 
+	// something wrong here. Todo figure it out.
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
 		uid, err := strconv.ParseUint(fmt.Sprintf("%.0f", claims["userId"]), 10, 32)

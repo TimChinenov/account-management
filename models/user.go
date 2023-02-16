@@ -139,7 +139,7 @@ func (factory UserFactory) Search(c *gin.Context) {
 
 	queryErr = rows.Err()
 	if queryErr != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to parse users"})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to generate"})
 		return
 	}
 
@@ -185,30 +185,33 @@ func (factory UserFactory) Login(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := services.HashPassword(loginUser.Password)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password or username"})
-		return
-	}
-
-	query := `SELECT username, password FROM users WHERE username = $1`
+	query := `SELECT id, username, password FROM users WHERE username = $1`
 	row := factory.Storage.QueryRowContext(context.Background(), query, loginUser.Username)
 
 	if row.Err() != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password or username"})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid username"})
 		return
 	}
 
+	var foundId int
 	var foundUsername string
 	var foundPassword string
 
-	row.Scan(&foundUsername, &foundPassword)
+	row.Scan(&foundId, &foundUsername, &foundPassword)
 
-	if !services.CheckPasswordHash(hashedPassword, foundPassword) {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password or username"})
+	if !services.CheckPasswordHash(loginUser.Password, foundPassword) {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password"})
 		return
 	}
+
+	token, err := CreateToken(foundId)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to generate token"})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"token": token})
 }
 
 func (factory UserFactory) Logout(c *gin.Context) {

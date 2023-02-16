@@ -1,15 +1,21 @@
 ### Notes
-curl http://localhost:8080/users \
+curl http://localhost:8080/api/users \
     --include \
     --header "Content-Type: application/json" \
     --request "POST" \
-    --data '{"username": "timmy","password": "test-password" }'
+    --data '{"username": "test6","password": "123" }'
 
-curl http://localhost:8080/login \
+curl http://localhost:8080/api/login \
     --include \
     --header "Content-Type: application/json" \
     --request "POST" \
-    --data '{"username": "timmy","password": "test-password" }'
+    --data '{"username": "test6","password": "123" }'
+
+
+curl http://localhost:8080/api/admin/user \
+    --include \
+	--header "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2NzY1MzQ3MjAsInVzZXJfaWQiOjI1fQ.GEeXa5kCE9dEMywXdlTLSs7iNtREcgJmeGc-Vp7KBL0"
+    --request "GET"
 
 ### Useful Sources
 https://github.com/gothinkster/golang-gin-realworld-example-app
