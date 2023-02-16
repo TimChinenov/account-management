@@ -15,7 +15,7 @@ func CreateToken(userId int) (string, error) {
 
 	claims := jwt.MapClaims{}
 	claims["authorized"] = true
-	claims["user_id"] = userId
+	claims["userId"] = userId
 	claims["exp"] = time.Now().Add(time.Hour + time.Duration(tokenLifespan)).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
@@ -37,12 +37,6 @@ func IsTokenValid(c *gin.Context) error {
 }
 
 func ExtractToken(c *gin.Context) string {
-	// token := c.Query("token")
-	// fmt.Println(token)
-	// if token != "" {
-	// 	return token
-	// }
-
 	bearerToken := c.Request.Header.Get("Authorization")
 	if len(strings.Split(bearerToken, " ")) == 2 {
 		return strings.Split(bearerToken, " ")[1]
@@ -63,7 +57,6 @@ func ExtractTokenId(c *gin.Context) (uint, error) {
 		return 0, err
 	}
 
-	// something wrong here. Todo figure it out.
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
 		uid, err := strconv.ParseUint(fmt.Sprintf("%.0f", claims["userId"]), 10, 32)
