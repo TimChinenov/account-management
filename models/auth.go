@@ -1,15 +1,12 @@
 package models
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (factory UserFactory) CurrentUser(c *gin.Context) {
-	fmt.Println("got to the current user")
-
 	userId, err := ExtractTokenId(c)
 
 	if err != nil {
