@@ -56,6 +56,7 @@ func main() {
 	protected := router.Group("/api/admin")
 	protected.Use(models.JwtAuthMiddleware())
 	protected.GET("/user", models.UserFactory{Storage: db}.CurrentUser)
+	protected.POST("/logout", models.UserFactory{Storage: db}.Logout)
 
 	router.Run("localhost:8080")
 

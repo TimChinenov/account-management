@@ -215,7 +215,13 @@ func (factory UserFactory) Login(c *gin.Context) {
 }
 
 func (factory UserFactory) Logout(c *gin.Context) {
-	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "incomplete"})
+	userId, err := ExtractTokenId(c)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 }
 
 func (factory UserFactory) GetUserById(userID int) (UserResponse, error) {
