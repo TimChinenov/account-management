@@ -51,12 +51,11 @@ func main() {
 	public.GET("/users", models.UserFactory{Storage: db}.Search)
 	public.PATCH("/users/:id/points", models.UserFactory{Storage: db}.UpdatePoints)
 	public.POST("/login", models.UserFactory{Storage: db}.Login)
-	public.POST("/logout", models.UserFactory{Storage: db}.Logout)
 
 	protected := router.Group("/api/admin")
 	protected.Use(models.JwtAuthMiddleware())
 	protected.GET("/user", models.UserFactory{Storage: db}.CurrentUser)
-	protected.POST("/logout", models.UserFactory{Storage: db}.Logout)
+	// protected.POST("/logout", models.UserFactory{Storage: db}.Logout)
 
 	router.Run("localhost:8080")
 

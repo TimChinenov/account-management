@@ -214,15 +214,14 @@ func (factory UserFactory) Login(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"token": token})
 }
 
-func (factory UserFactory) Logout(c *gin.Context) {
-	userId, err := ExtractTokenId(c)
+// func (factory UserFactory) Logout(c *gin.Context) {
+// 	userId, err := ExtractTokenId(c)
 
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-}
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// }
 
 func (factory UserFactory) GetUserById(userID int) (UserResponse, error) {
 	query := `SELECT id, username, score FROM users WHERE id=$1;`
