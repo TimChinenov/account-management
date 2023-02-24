@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	host     = "localhost"
-	port     = 5432
+	host     = "account-management-db.internal"
+	port     = 5433
 	user     = "postgres"
-	password = "password"
+	password = "XbpFZYVeADBJ6wR"
 	dbname   = "postgres"
 )
 
@@ -57,6 +57,5 @@ func main() {
 	protected.GET("/user", models.UserFactory{Storage: db}.CurrentUser)
 	// protected.POST("/logout", models.UserFactory{Storage: db}.Logout)
 
-	router.Run("localhost:8080")
-
+	router.Run(":8080")
 }
