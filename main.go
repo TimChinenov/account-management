@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-	// godotenv.Load()
 	host := os.Getenv("POSTGRES_HOST")
 	port := os.Getenv("POSTGRES_PORT")
 	user := os.Getenv("POSTGRES_USER")
