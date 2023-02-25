@@ -39,7 +39,7 @@ func main() {
 
 	// TODO: delete this in production
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:  []string{"http://localhost:3000"},
+		AllowOrigins:  []string{"http://localhost:3000", "https://account-management-27654.web.app"},
 		AllowMethods:  []string{"PATCH", "POST", "GET"},
 		AllowHeaders:  []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders: []string{"Content-Type"},
