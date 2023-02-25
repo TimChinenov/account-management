@@ -4,24 +4,36 @@ import (
 	"database/sql"
 	"example/account-management/models"
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "account-management-db.internal"
-	port     = 5433
-	user     = "postgres"
-	password = "XbpFZYVeADBJ6wR"
-	dbname   = "postgres"
-)
-
 func main() {
+	godotenv.Load()
+	host := os.Getenv("POSTGRES_HOST")
+	port, err := strconv.Atoi(os.Getenv("POSTGRES_PORT"))
+	user := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	dbname := os.Getenv("POSTGRES_DB")
+	origin := os.Getenv("ORIGIN")
+	baseUrl := os.Getenv("BASE_URL")
+
+	if err != nil {
+		panic(err)
+	}
+
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		host,
+		port,
+		user,
+		password,
+		dbname)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
@@ -39,7 +51,7 @@ func main() {
 
 	// TODO: delete this in production
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:  []string{"http://localhost:3000", "https://account-management-27654.web.app"},
+		AllowOrigins:  []string{origin},
 		AllowMethods:  []string{"PATCH", "POST", "GET"},
 		AllowHeaders:  []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders: []string{"Content-Type"},
@@ -57,5 +69,5 @@ func main() {
 	protected.GET("/user", models.UserFactory{Storage: db}.CurrentUser)
 	// protected.POST("/logout", models.UserFactory{Storage: db}.Logout)
 
-	router.Run(":8080")
+	router.Run(fmt.Sprintf("%s:8080", baseUrl))
 }
