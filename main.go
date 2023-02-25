@@ -5,29 +5,23 @@ import (
 	"example/account-management/models"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	godotenv.Load()
+	// godotenv.Load()
 	host := os.Getenv("POSTGRES_HOST")
-	port, err := strconv.Atoi(os.Getenv("POSTGRES_PORT"))
+	port := os.Getenv("POSTGRES_PORT")
 	user := os.Getenv("POSTGRES_USER")
 	password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := os.Getenv("POSTGRES_DB")
 	origin := os.Getenv("ORIGIN")
 	baseUrl := os.Getenv("BASE_URL")
 
-	if err != nil {
-		panic(err)
-	}
-
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host,
 		port,
