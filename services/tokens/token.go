@@ -1,4 +1,4 @@
-package models
+package tokens
 
 import (
 	"fmt"
@@ -68,7 +68,3 @@ func ExtractTokenId(c *gin.Context) (uint, error) {
 
 	return 0, err
 }
-
-// func RemoveToken(c *gin.Context) error {
-
-// }

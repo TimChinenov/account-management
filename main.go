@@ -2,7 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"example/account-management/models"
+	"example/account-management/services/middleware"
+	"example/account-management/services/users"
 	"fmt"
 	"os"
 
@@ -29,6 +30,7 @@ func main() {
 		dbname)
 
 	db, err := sql.Open("postgres", psqlInfo)
+
 	if err != nil {
 		panic(err)
 	}
@@ -42,7 +44,6 @@ func main() {
 
 	router := gin.Default()
 
-	// TODO: delete this in production
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:  []string{origin},
 		AllowMethods:  []string{"PATCH", "POST", "GET"},
@@ -51,16 +52,15 @@ func main() {
 	}))
 
 	public := router.Group("/api")
-	public.POST("/users", models.UserFactory{Storage: db}.Create)
-	public.GET("/users/:id", models.UserFactory{Storage: db}.Get)
-	public.GET("/users", models.UserFactory{Storage: db}.Search)
-	public.PATCH("/users/:id/points", models.UserFactory{Storage: db}.UpdatePoints)
-	public.POST("/login", models.UserFactory{Storage: db}.Login)
+	public.POST("/users", users.UserFactory{Storage: db}.Create)
+	public.GET("/users/:id", users.UserFactory{Storage: db}.Get)
+	public.GET("/users", users.UserFactory{Storage: db}.Search)
+	public.PATCH("/users/:id/points", users.UserFactory{Storage: db}.UpdatePoints)
+	public.POST("/login", users.UserFactory{Storage: db}.Login)
 
 	protected := router.Group("/api/admin")
-	protected.Use(models.JwtAuthMiddleware())
-	protected.GET("/user", models.UserFactory{Storage: db}.CurrentUser)
-	// protected.POST("/logout", models.UserFactory{Storage: db}.Logout)
+	protected.Use(middleware.JwtAuthMiddleware())
+	protected.GET("/user", users.UserFactory{Storage: db}.CurrentUser)
 
 	router.Run(fmt.Sprintf("%s:8080", baseUrl))
 }

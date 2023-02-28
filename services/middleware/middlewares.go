@@ -1,6 +1,7 @@
-package models
+package middleware
 
 import (
+	"example/account-management/services/tokens"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,7 +9,7 @@ import (
 
 func JwtAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		err := IsTokenValid(c)
+		err := tokens.IsTokenValid(c)
 
 		if err != nil {
 			c.String(http.StatusUnauthorized, "Unauthorized")

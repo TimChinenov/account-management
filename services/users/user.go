@@ -1,14 +1,15 @@
-package models
+package users
 
 import (
 	"context"
 	"database/sql"
-	"example/account-management/services"
+	"example/account-management/services/tokens"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -50,7 +51,7 @@ func (factory UserFactory) Create(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := services.HashPassword(newUser.Password)
+	hashedPassword, err := hashPassword(newUser.Password)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password"})
@@ -199,12 +200,12 @@ func (factory UserFactory) Login(c *gin.Context) {
 
 	row.Scan(&foundId, &foundUsername, &foundPassword)
 
-	if !services.CheckPasswordHash(loginUser.Password, foundPassword) {
+	if !checkPasswordHash(loginUser.Password, foundPassword) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password"})
 		return
 	}
 
-	token, err := CreateToken(foundId)
+	token, err := tokens.CreateToken(foundId)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to generate token"})
@@ -213,15 +214,6 @@ func (factory UserFactory) Login(c *gin.Context) {
 
 	c.IndentedJSON(http.StatusOK, gin.H{"token": token})
 }
-
-// func (factory UserFactory) Logout(c *gin.Context) {
-// 	userId, err := ExtractTokenId(c)
-
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// }
 
 func (factory UserFactory) GetUserById(userID int) (UserResponse, error) {
 	query := `SELECT id, username, score FROM users WHERE id=$1;`
@@ -232,4 +224,32 @@ func (factory UserFactory) GetUserById(userID int) (UserResponse, error) {
 	err := row.Scan(&userResponse.ID, &userResponse.Username, &userResponse.Score)
 
 	return userResponse, err
+}
+
+func (factory UserFactory) CurrentUser(c *gin.Context) {
+	userId, err := tokens.ExtractTokenId(c)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := factory.GetUserById(int(userId))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "success", "data": user})
+}
+
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+func checkPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
