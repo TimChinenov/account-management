@@ -13,13 +13,13 @@ import (
 )
 
 func main() {
-	host := os.Getenv("POSTGRES_HOST")
-	port := os.Getenv("POSTGRES_PORT")
-	user := os.Getenv("POSTGRES_USER")
-	password := os.Getenv("POSTGRES_PASSWORD")
-	dbname := os.Getenv("POSTGRES_DB")
-	origin := os.Getenv("ORIGIN")
-	baseUrl := os.Getenv("BASE_URL")
+	host := getEnvironmentVariableOrDefault("POSTGRES_HOST", "localhost")
+	port := getEnvironmentVariableOrDefault("POSTGRES_PORT", "5432")
+	user := getEnvironmentVariableOrDefault("POSTGRES_USER", "postgres")
+	password := getEnvironmentVariableOrDefault("POSTGRES_PASSWORD", "password")
+	dbname := getEnvironmentVariableOrDefault("POSTGRES_DB", "postgres")
+	origin := getEnvironmentVariableOrDefault("ORIGIN", "http://localhost:3000")
+	baseUrl := getEnvironmentVariableOrDefault("BASE_URL", "localhost")
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -36,8 +36,8 @@ func main() {
 	}
 
 	defer db.Close()
-
 	err = db.Ping()
+
 	if err != nil {
 		panic(err)
 	}
@@ -63,4 +63,14 @@ func main() {
 	protected.GET("/user", users.UserFactory{Storage: db}.CurrentUser)
 
 	router.Run(fmt.Sprintf("%s:8080", baseUrl))
+}
+
+func getEnvironmentVariableOrDefault(environmentVariable string, defaultValue string) string {
+	value := os.Getenv(environmentVariable)
+
+	if value == "" {
+		value = defaultValue
+	}
+
+	return value
 }
