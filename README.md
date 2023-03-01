@@ -19,9 +19,9 @@ curl http://localhost:8080/api/admin/user \
 	--header "Authorization: Bearer <token>"
     --request "GET"
 
-curl http://localhost:8080/api/admin/posts --include --header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2Nzc2NTQ2MjQsInVzZXJJZCI6MjV9.UD3X0eOutpgz9IKHYWziPi1QCHo3xUPGT7cVGiNAqJ0" --header "Content-Type: application/json" --request "POST" --data '{ "userId": 26, "body": "lorem ipsum this is a test comment" }'
+curl http://localhost:8080/api/admin/posts --include --header "Authorization: Bearer <token>" --header "Content-Type: application/json" --request "POST" --data '{ "userId": 26, "body": "lorem ipsum this is a test comment" }'
 
-curl -X GET "http://localhost:8080/api/admin/posts/1/10" --include --header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2Nzc2NTQ2MjQsInVzZXJJZCI6MjV9.UD3X0eOutpgz9IKHYWziPi1QCHo3xUPGT7cVGiNAqJ0"
+curl -X GET "http://localhost:8080/api/admin/posts/1/10" --include --header "Authorization: Bearer <token>"
 
 ### Useful Sources
 https://github.com/gothinkster/golang-gin-realworld-example-app

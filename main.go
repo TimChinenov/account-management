@@ -20,7 +20,7 @@ func main() {
 	password := getEnvironmentVariableOrDefault("POSTGRES_PASSWORD", "password")
 	dbname := getEnvironmentVariableOrDefault("POSTGRES_DB", "postgres")
 	origin := getEnvironmentVariableOrDefault("ORIGIN", "http://localhost:3000")
-	baseUrl := getEnvironmentVariableOrDefault("BASE_URL", "localhost")
+	baseUrl := getEnvironmentVariableOrDefault("BASE_URL", "")
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
