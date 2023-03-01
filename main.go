@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"example/account-management/services/middleware"
+	"example/account-management/services/posts"
 	"example/account-management/services/users"
 	"fmt"
 	"os"
@@ -19,7 +20,7 @@ func main() {
 	password := getEnvironmentVariableOrDefault("POSTGRES_PASSWORD", "password")
 	dbname := getEnvironmentVariableOrDefault("POSTGRES_DB", "postgres")
 	origin := getEnvironmentVariableOrDefault("ORIGIN", "http://localhost:3000")
-	baseUrl := getEnvironmentVariableOrDefault("BASE_URL", "")
+	baseUrl := getEnvironmentVariableOrDefault("BASE_URL", "localhost")
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -61,6 +62,8 @@ func main() {
 	protected := router.Group("/api/admin")
 	protected.Use(middleware.JwtAuthMiddleware())
 	protected.GET("/user", users.UserFactory{Storage: db}.CurrentUser)
+	protected.POST("/posts", posts.PostFactory{Storage: db}.Create)
+	protected.GET("/posts/:page/:page_count", posts.PostFactory{Storage: db}.Search)
 
 	router.Run(fmt.Sprintf("%s:8080", baseUrl))
 }

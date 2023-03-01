@@ -2,7 +2,7 @@ package users
 
 import (
 	"context"
-	"database/sql"
+	"example/account-management/services/storage"
 	"example/account-management/services/tokens"
 	"net/http"
 	"strconv"
@@ -11,13 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
-
-type User struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Score    int    `json:"score"`
-}
 
 type UserResponse struct {
 	ID       int    `json:"id"`
@@ -35,14 +28,8 @@ type UpdateScoreRequst struct {
 	Score int `json:"score"`
 }
 
-type Storage interface {
-	PrepareContext(context.Context, string) (*sql.Stmt, error)
-	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
-	QueryRowContext(context.Context, string, ...any) *sql.Row
-}
-
 type UserFactory struct {
-	Storage
+	storage.Storage
 }
 
 func (factory UserFactory) Create(c *gin.Context) {

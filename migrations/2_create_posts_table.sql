@@ -1,3 +1,4 @@
+-- create posts table and table to track which users have voted on which post
 CREATE TABLE posts(
     id SERIAL NOT NULL,
     PRIMARY KEY (id),
