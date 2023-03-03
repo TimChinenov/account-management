@@ -81,9 +81,6 @@ func (factory UserFactory) Get(c *gin.Context) {
 		return
 	}
 
-	query := `SELECT id, username, score FROM users WHERE id=$1;`
-	factory.Storage.QueryRowContext(context.Background(), query, userID)
-
 	var userResponse UserResponse
 
 	userResponse, err = factory.GetUserById(userID)

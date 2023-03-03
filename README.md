@@ -37,7 +37,7 @@ https://seefnasrul.medium.com/create-your-first-go-rest-api-with-jwt-authenticat
 
 
 ### PSQL connection
-psql -h "localhost" -U "postgres" -p "5432" -d "postgres" -a -f "/Users/timchinenov/Dev/account-management/migrations/1_create_user_table.sql"
+psql -h "localhost" -U "postgres" -p "15432" -d "postgres" -a -f "/Users/timchinenov/Dev/account-management/migrations/2_create_posts_table.sql"
 
 steps to migrate fly.io
     - proxy into server

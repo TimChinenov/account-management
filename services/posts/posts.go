@@ -18,9 +18,14 @@ type PostResponse struct {
 	DownvoteCount uint   `json:"downvoteCount"`
 }
 
-type PostRequest struct {
+type Post struct {
 	UserId uint   `json:"userId"`
 	Body   string `json:"body"`
+}
+
+type Vote struct {
+	UserId uint `json:"userId"`
+	PostId uint `json:"postId"`
 }
 
 type PostResponsePaginated struct {
@@ -36,7 +41,7 @@ type PostFactory struct {
 }
 
 func (factory PostFactory) Create(c *gin.Context) {
-	var newPost PostRequest
+	var newPost Post
 
 	if err := c.BindJSON((&newPost)); err != nil {
 		return
@@ -56,6 +61,42 @@ func (factory PostFactory) Create(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusCreated, "")
+}
+
+func (factory PostFactory) Upvote(c *gin.Context) {
+	var vote Vote
+
+	if err := c.BindJSON((&vote)); err != nil {
+		return
+	}
+
+	// check that a mapping has not already been made, if it has been made it needs to be a downvote
+	query := `SELECT vote_type FROM user_post_votes WHERE user_id = $1`
+	row := factory.Storage.QueryRowContext(context.Background(), query, vote.UserId)
+
+	var vote_type uint
+	if err := row.Scan(&vote_type); err == nil {
+		// if there is no error, that means a record was found
+		if vote_type == 1 {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Already upvoted"})
+		}
+	}
+
+	query = `UPDATE posts SET upvote_count = upvote_count + 1 WHERE post_id = $1`
+	_, err := factory.Storage.QueryContext(context.Background(), query, vote.PostId)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.IndentedJSON(http.StatusCreated, "")
+}
+
+func (factory PostFactory) Downvote(c *gin.Context) {
+	// get user id, get post id
+	// update post count
+	// add mapping
 }
 
 func (factory PostFactory) Search(c *gin.Context) {
