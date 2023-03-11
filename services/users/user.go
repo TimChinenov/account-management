@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"database/sql"
 	"example/account-management/services/storage"
 	"example/account-management/services/tokens"
 	"net/http"
@@ -30,6 +31,59 @@ type UpdateScoreRequst struct {
 
 type UserFactory struct {
 	storage.Storage
+}
+
+type UserStore interface {
+	Create(*gin.Context)
+}
+
+type userStore struct {
+	db *sql.DB
+}
+
+func NewUserStore(db *sql.DB) UserStore {
+	return &userStore{db: db}
+}
+
+func (u *userStore) Create(c *gin.Context) {
+	var newUser UserRequest
+
+	if err := c.BindJSON((&newUser)); err != nil {
+		return
+	}
+
+	hashedPassword, err := hashPassword(newUser.Password)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "invalid password"})
+		return
+	}
+
+	query := `INSERT INTO users (username, password, score) VALUES ($1, $2, $3);`
+	_, err = u.db.QueryContext(context.Background(), query, newUser.Username, hashedPassword, 0)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	query = `SELECT id, username, score FROM users WHERE username=$1;`
+	row := u.db.QueryRowContext(context.Background(), query, newUser.Username)
+
+	var id int
+	var username string
+	var score int
+
+	err = row.Scan(&id, &username, &score)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	var userResponse UserResponse = UserResponse{ID: id, Username: username, Score: score}
+
+	c.IndentedJSON(http.StatusCreated, userResponse)
 }
 
 func (factory UserFactory) Create(c *gin.Context) {

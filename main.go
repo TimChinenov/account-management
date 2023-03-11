@@ -52,8 +52,10 @@ func main() {
 		ExposeHeaders: []string{"Content-Type"},
 	}))
 
+	userStore := users.NewUserStore(db)
+
 	public := router.Group("/api")
-	public.POST("/users", users.UserFactory{Storage: db}.Create)
+	public.POST("/users", userStore.Create)
 	public.GET("/users/:id", users.UserFactory{Storage: db}.Get)
 	public.GET("/users", users.UserFactory{Storage: db}.Search)
 	public.PATCH("/users/:id/points", users.UserFactory{Storage: db}.UpdatePoints)

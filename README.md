@@ -5,7 +5,7 @@ curl http://localhost:8080/api/users \
     --include \
     --header "Content-Type: application/json" \
     --request "POST" \
-    --data '{"username": "test32","password": "123" }'
+    --data '{"username": "test34","password": "123" }'
 
 curl http://localhost:8080/api/login \
     --include \
