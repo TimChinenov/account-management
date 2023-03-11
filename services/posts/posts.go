@@ -138,7 +138,7 @@ func (factory PostFactory) Vote(c *gin.Context) {
 	}
 
 	// Increment the vote count of the posts.
-	_, err := factory.Storage.QueryContext(context.Background(), updateCountQuery, incrementVote, vote.PostId)
+	_, err := factory.Storage.QueryContext(context.Background(), updateCountQuery, vote.PostId)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
