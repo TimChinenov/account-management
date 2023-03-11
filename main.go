@@ -53,21 +53,21 @@ func main() {
 	}))
 
 	userStore := users.NewUserStore(db)
+	postStore := posts.NewPostStore(db)
 
 	public := router.Group("/api")
 	public.POST("/users", userStore.Create)
-	public.GET("/users/:id", users.UserFactory{Storage: db}.Get)
-	public.GET("/users", users.UserFactory{Storage: db}.Search)
-	public.PATCH("/users/:id/points", users.UserFactory{Storage: db}.UpdatePoints)
-	public.POST("/login", users.UserFactory{Storage: db}.Login)
+	public.GET("/users/:id", userStore.Get)
+	public.GET("/users", userStore.Search)
+	public.PATCH("/users/:id/points", userStore.UpdatePoints)
+	public.POST("/login", userStore.Login)
 
 	protected := router.Group("/api/admin")
 	protected.Use(middleware.JwtAuthMiddleware())
-	protected.GET("/user", users.UserFactory{Storage: db}.CurrentUser)
-	protected.POST("/posts", posts.PostFactory{Storage: db}.Create)
-	protected.GET("/posts/:page/:page_count", posts.PostFactory{Storage: db}.Search)
-	protected.POST("/posts/upvote", posts.PostFactory{Storage: db}.Vote)
-	protected.POST("/posts/downvote", posts.PostFactory{Storage: db}.Vote)
+	protected.GET("/user", userStore.CurrentUser)
+	protected.POST("/posts", postStore.Create)
+	protected.GET("/posts/:page/:page_count", postStore.Search)
+	protected.POST("/posts/vote", postStore.Vote)
 
 	router.Run(fmt.Sprintf("%s:8080", baseUrl))
 }

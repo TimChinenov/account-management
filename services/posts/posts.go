@@ -2,7 +2,7 @@ package posts
 
 import (
 	"context"
-	"example/account-management/services/storage"
+	"database/sql"
 	"example/account-management/services/tokens"
 	"net/http"
 	"strconv"
@@ -45,11 +45,21 @@ type PostResponsePaginated struct {
 	PreviousPageUrl string         `json:"previousPageUrl"`
 }
 
-type PostFactory struct {
-	storage.Storage
+type PostStore interface {
+	Create(c *gin.Context)
+	Vote(c *gin.Context)
+	Search(c *gin.Context)
 }
 
-func (factory PostFactory) Create(c *gin.Context) {
+type postStore struct {
+	db *sql.DB
+}
+
+func NewPostStore(db *sql.DB) PostStore {
+	return &postStore{db: db}
+}
+
+func (p *postStore) Create(c *gin.Context) {
 	var newPost Post
 
 	if err := c.BindJSON((&newPost)); err != nil {
@@ -62,7 +72,7 @@ func (factory PostFactory) Create(c *gin.Context) {
 	}
 
 	query := `INSERT INTO posts (user_id, body) VALUES ($1, $2);`
-	_, err := factory.Storage.QueryContext(context.Background(), query, newPost.UserId, newPost.Body)
+	_, err := p.db.QueryContext(context.Background(), query, newPost.UserId, newPost.Body)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
@@ -72,7 +82,7 @@ func (factory PostFactory) Create(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, "")
 }
 
-func (factory PostFactory) Vote(c *gin.Context) {
+func (p *postStore) Vote(c *gin.Context) {
 	var vote Vote
 
 	if err := c.BindJSON((&vote)); err != nil {
@@ -86,7 +96,7 @@ func (factory PostFactory) Vote(c *gin.Context) {
 
 	// Check if this user has voted on this post before.
 	alreadyVotedQuery := `SELECT id, vote_type FROM user_post_votes WHERE user_id = $1 && post_id = $2`
-	alreadyVotedRow := factory.Storage.QueryRowContext(context.Background(), alreadyVotedQuery, vote.UserId, vote.PostId)
+	alreadyVotedRow := p.db.QueryRowContext(context.Background(), alreadyVotedQuery, vote.UserId, vote.PostId)
 
 	var userPostVotesId uint = 0
 	var voteType uint
@@ -109,7 +119,7 @@ func (factory PostFactory) Vote(c *gin.Context) {
 		}
 
 		updateCountQuery := `UPDATE posts SET $1 = $1 + 1, $2 = $2 - 1 WHERE post_id = $3`
-		_, err := factory.Storage.QueryContext(context.Background(), updateCountQuery, incrementVote, decrementVote, vote.PostId)
+		_, err := p.db.QueryContext(context.Background(), updateCountQuery, incrementVote, decrementVote, vote.PostId)
 
 		if err != nil {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to update vote counts"})
@@ -118,7 +128,7 @@ func (factory PostFactory) Vote(c *gin.Context) {
 
 		// Update the post to user mapping with the new vote type.
 		updateUserPostVotesQuery := `UPDATE user_post_votes SET vote_type = $1 WHERE user_id = $2 && post_id = $3`
-		_, err = factory.Storage.QueryContext(context.Background(), updateUserPostVotesQuery, voteType, vote.UserId, vote.PostId)
+		_, err = p.db.QueryContext(context.Background(), updateUserPostVotesQuery, voteType, vote.UserId, vote.PostId)
 
 		if err != nil {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to update vote type"})
@@ -126,7 +136,7 @@ func (factory PostFactory) Vote(c *gin.Context) {
 		}
 
 		// Return the vote response
-		voteResponse := factory.getPostForUser(vote.UserId, vote.PostId)
+		voteResponse := p.getPostForUser(vote.UserId, vote.PostId)
 		c.IndentedJSON(http.StatusOK, voteResponse)
 		return
 	}
@@ -138,7 +148,7 @@ func (factory PostFactory) Vote(c *gin.Context) {
 	}
 
 	// Increment the vote count of the posts.
-	_, err := factory.Storage.QueryContext(context.Background(), updateCountQuery, vote.PostId)
+	_, err := p.db.QueryContext(context.Background(), updateCountQuery, vote.PostId)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -146,18 +156,18 @@ func (factory PostFactory) Vote(c *gin.Context) {
 
 	// Add a mapping between the user and the post
 	insertPostVoteMapping := `INSERT INTO user_post_votes (user_id, post_id, vote_type) VALUES ($1, $2, $3)`
-	_, err = factory.Storage.QueryContext(context.Background(), insertPostVoteMapping, vote.UserId, vote.PostId, vote.VoteType)
+	_, err = p.db.QueryContext(context.Background(), insertPostVoteMapping, vote.UserId, vote.PostId, vote.VoteType)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
-	voteResponse := factory.getPostForUser(vote.UserId, vote.PostId)
+	voteResponse := p.getPostForUser(vote.UserId, vote.PostId)
 	c.IndentedJSON(http.StatusOK, voteResponse)
 	return
 }
 
-func (factory PostFactory) Search(c *gin.Context) {
+func (p *postStore) Search(c *gin.Context) {
 	pageData, _ := c.GetQuery("page")
 	pageCountData, _ := c.GetQuery("page_count")
 
@@ -176,7 +186,7 @@ func (factory PostFactory) Search(c *gin.Context) {
 		ORDER BY posts.id DESC
 		OFFSET $1
 		LIMIT $2;`
-	rows, queryErr := factory.Storage.QueryContext(context.Background(), query, (page-1)*pageCount, pageCount)
+	rows, queryErr := p.db.QueryContext(context.Background(), query, (page-1)*pageCount, pageCount)
 
 	if queryErr != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": queryErr})
@@ -205,11 +215,11 @@ func (factory PostFactory) Search(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, posts)
 }
 
-func (factory PostFactory) getPostForUser(userId uint, postId uint) VoteResponse {
+func (p *postStore) getPostForUser(userId uint, postId uint) VoteResponse {
 	query := `SELECT posts.id, body, upvote_count, downvote_count, vote_type FROM user_post_votes
 		INNER JOIN posts ON post_id = posts.id
 		WHERE user_id = $1 && post_id = $2`
-	row := factory.Storage.QueryRowContext(context.Background(), query, userId, postId)
+	row := p.db.QueryRowContext(context.Background(), query, userId, postId)
 
 	var voteResponse VoteResponse
 	row.Scan(&voteResponse.PostId, &voteResponse.Body, &voteResponse.UpvoteCount, &voteResponse.DownvoteCount, &voteResponse.VoteType)
