@@ -5,19 +5,25 @@ curl http://localhost:8080/api/users \
     --include \
     --header "Content-Type: application/json" \
     --request "POST" \
-    --data '{"username": "test6","password": "123" }'
+    --data '{"username": "test32","password": "123" }'
 
 curl http://localhost:8080/api/login \
     --include \
     --header "Content-Type: application/json" \
     --request "POST" \
-    --data '{"username": "test6","password": "123" }'
+    --data '{"username": "test32","password": "123" }'
 
 
 curl http://localhost:8080/api/admin/user \
     --include \
-	--header "Authorization: Bearer <token>"
+	--header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2Nzg1MjkwMzYsInVzZXJJZCI6NDB9.B5MPt8nmYnKwTsWIzFgNIBnN565uMberEz9WkyAkG1E" \
     --request "GET"
+
+curl http://localhost:8080/api/admin/posts/upvote \
+    --include \
+	--header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2Nzg1MjkwMzYsInVzZXJJZCI6NDB9.B5MPt8nmYnKwTsWIzFgNIBnN565uMberEz9WkyAkG1E" \
+    --request "POST" \
+    --data '{"userId": 40, "postId": 1, "voteType": 0}'
 
 curl http://localhost:8080/api/admin/posts --include --header "Authorization: Bearer <token>" --header "Content-Type: application/json" --request "POST" --data '{ "userId": 26, "body": "lorem ipsum this is a test comment" }'
 
