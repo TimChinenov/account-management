@@ -24,8 +24,16 @@ type Post struct {
 }
 
 type Vote struct {
-	UserId uint `json:"userId"`
-	PostId uint `json:"postId"`
+	UserId   uint `json:"userId"`
+	PostId   uint `json:"postId"`
+	VoteType uint `json:"voteType"`
+}
+
+type VoteResponse struct {
+	PostId        uint `json:"postId"`
+	VoteType      uint `json:"voteType"`
+	UpvoteCount   uint `json:"upvoteCount"`
+	DownvoteCount uint `json:"downvoteCount"`
 }
 
 type PostResponsePaginated struct {
@@ -63,40 +71,90 @@ func (factory PostFactory) Create(c *gin.Context) {
 	c.IndentedJSON(http.StatusCreated, "")
 }
 
-func (factory PostFactory) Upvote(c *gin.Context) {
+func (factory PostFactory) Vote(c *gin.Context) {
 	var vote Vote
 
 	if err := c.BindJSON((&vote)); err != nil {
 		return
 	}
 
-	// check that a mapping has not already been made, if it has been made it needs to be a downvote
-	query := `SELECT vote_type FROM user_post_votes WHERE user_id = $1`
-	row := factory.Storage.QueryRowContext(context.Background(), query, vote.UserId)
-
-	var vote_type uint
-	if err := row.Scan(&vote_type); err == nil {
-		// if there is no error, that means a record was found
-		if vote_type == 1 {
-			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Already upvoted"})
-		}
-	}
-
-	query = `UPDATE posts SET upvote_count = upvote_count + 1 WHERE post_id = $1`
-	_, err := factory.Storage.QueryContext(context.Background(), query, vote.PostId)
-
-	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+	if vote.VoteType != 0 || vote.VoteType != 1 {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Vote type invalide"})
 		return
 	}
 
-	c.IndentedJSON(http.StatusCreated, "")
-}
+	// Check if this user has voted on this post before.
+	alreadyVotedQuery := `SELECT id, vote_type FROM user_post_votes WHERE user_id = $1 && post_id = $2`
+	alreadyVotedRow := factory.Storage.QueryRowContext(context.Background(), alreadyVotedQuery, vote.UserId, vote.PostId)
 
-func (factory PostFactory) Downvote(c *gin.Context) {
-	// get user id, get post id
-	// update post count
-	// add mapping
+	var userPostVotesId uint = 0
+	var voteType uint
+	alreadyVotedRow.Scan(userPostVotesId, voteType)
+
+	// If they have voted on this post before...
+	if userPostVotesId != 0 {
+		if voteType == vote.VoteType {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "already voted for post"})
+			return
+		}
+
+		incrementVote := `downvote_count`
+		decrementVote := `upvote_count`
+
+		// Increment the new vote type and decrement the former vote type.
+		if vote.VoteType == 1 {
+			incrementVote = `upvote_count`
+			decrementVote = `downvote_count`
+		}
+
+		updateCountQuery := `UPDATE posts SET $1 = $1 + 1, $2 = $2 - 1 WHERE post_id = $3`
+		_, err := factory.Storage.QueryContext(context.Background(), updateCountQuery, incrementVote, decrementVote, vote.PostId)
+
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to update votes"})
+			return
+		}
+
+		// Update the post to user mapping with the new vote type.
+		updateUserPostVotesQuery := `UPDATE user_post_votes SET vote_type = $1 WHERE user_id = $2 && post_id = $3`
+		_, err = factory.Storage.QueryContext(context.Background(), updateUserPostVotesQuery, voteType, vote.UserId, vote.PostId)
+
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to update votes"})
+			return
+		}
+
+		// Return the vote response
+		var voteResponse VoteResponse
+		c.IndentedJSON(http.StatusOK, voteResponse)
+		return
+	}
+
+	// If they have not voted before...
+	incrementVote := `downvote_count`
+	if vote.VoteType == 1 {
+		incrementVote = `upvote_count`
+	}
+
+	// Increment the vote count of the posts.
+	updateCountQuery := `UPDATE posts SET $1 = $1 + 1 WHERE post_id = $3`
+	_, err := factory.Storage.QueryContext(context.Background(), updateCountQuery, incrementVote, vote.PostId)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to update votes"})
+		return
+	}
+
+	// Add a mapping between the user and the post
+	insertPostVoteMapping := `INSERT INTO user_post_votes (user_id, post_id, vote_type) VALUES ($1, $2, $3)`
+	_, err = factory.Storage.QueryContext(context.Background(), insertPostVoteMapping, vote.UserId, vote.PostId, voteType)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to add user to post"})
+		return
+	}
+
+	var voteResponse VoteResponse
+	c.IndentedJSON(http.StatusOK, voteResponse)
+	return
 }
 
 func (factory PostFactory) Search(c *gin.Context) {
