@@ -30,10 +30,11 @@ type Vote struct {
 }
 
 type VoteResponse struct {
-	PostId        uint `json:"postId"`
-	VoteType      uint `json:"voteType"`
-	UpvoteCount   uint `json:"upvoteCount"`
-	DownvoteCount uint `json:"downvoteCount"`
+	PostId        uint   `json:"postId"`
+	Body          string `json:"body"`
+	VoteType      uint   `json:"voteType"`
+	UpvoteCount   uint   `json:"upvoteCount"`
+	DownvoteCount uint   `json:"downvoteCount"`
 }
 
 type PostResponsePaginated struct {
@@ -125,7 +126,7 @@ func (factory PostFactory) Vote(c *gin.Context) {
 		}
 
 		// Return the vote response
-		var voteResponse VoteResponse
+		voteResponse := factory.getPostForUser(vote.UserId, vote.PostId)
 		c.IndentedJSON(http.StatusOK, voteResponse)
 		return
 	}
@@ -152,7 +153,7 @@ func (factory PostFactory) Vote(c *gin.Context) {
 		return
 	}
 
-	var voteResponse VoteResponse
+	voteResponse := factory.getPostForUser(vote.UserId, vote.PostId)
 	c.IndentedJSON(http.StatusOK, voteResponse)
 	return
 }
@@ -203,6 +204,17 @@ func (factory PostFactory) Search(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, posts)
+}
+
+func (factory PostFactory) getPostForUser(userId uint, postId uint) VoteResponse {
+	query := `SELECT posts.id, body, upvote_count, downvote_count, vote_type FROM user_post_votes
+		INNER JOIN posts ON post_id = posts.id
+		WHERE user_id = $1 && post_id = $2`
+	row := factory.Storage.QueryRowContext(context.Background(), query, userId, postId)
+
+	var voteResponse VoteResponse
+	row.Scan(&voteResponse.PostId, &voteResponse.Body, &voteResponse.UpvoteCount, &voteResponse.DownvoteCount, &voteResponse.VoteType)
+	return voteResponse
 }
 
 func isCurrentUser(c *gin.Context, userId uint) bool {
