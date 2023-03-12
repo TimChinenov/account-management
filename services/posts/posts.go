@@ -14,8 +14,8 @@ type PostResponse struct {
 	Id            uint   `json:"id"`
 	Username      string `json:"username"`
 	Body          string `json:"body"`
-	UpvoteCount   uint   `json:"upvoteCount"`
-	DownvoteCount uint   `json:"downvoteCount"`
+	UpvoteCount   int    `json:"upvoteCount"`
+	DownvoteCount int    `json:"downvoteCount"`
 }
 
 type Post struct {
@@ -222,7 +222,7 @@ func (p *postStore) Search(c *gin.Context) {
 		queryErr = rows.Scan(&post.Id, &post.Username, &post.Body, &post.UpvoteCount, &post.DownvoteCount)
 
 		if queryErr != nil {
-			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "failed to parse posts"})
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": queryErr.Error()})
 			return
 		}
 
