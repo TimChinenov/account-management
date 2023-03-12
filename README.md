@@ -5,13 +5,13 @@ curl http://localhost:8080/api/users \
     --include \
     --header "Content-Type: application/json" \
     --request "POST" \
-    --data '{"username": "test34","password": "123" }'
+    --data '{"username": "test36","password": "123" }'
 
 curl http://localhost:8080/api/login \
     --include \
     --header "Content-Type: application/json" \
     --request "POST" \
-    --data '{"username": "test32","password": "123" }'
+    --data '{"username": "test36","password": "123" }'
 
 
 curl http://localhost:8080/api/admin/user \
@@ -19,11 +19,11 @@ curl http://localhost:8080/api/admin/user \
 	--header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2Nzg1MjkwMzYsInVzZXJJZCI6NDB9.B5MPt8nmYnKwTsWIzFgNIBnN565uMberEz9WkyAkG1E" \
     --request "GET"
 
-curl http://localhost:8080/api/admin/posts/upvote \
+curl http://localhost:8080/api/admin/posts/vote \
     --include \
-	--header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2Nzg1MjkwMzYsInVzZXJJZCI6NDB9.B5MPt8nmYnKwTsWIzFgNIBnN565uMberEz9WkyAkG1E" \
+	--header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2Nzg1ODcxNDMsInVzZXJJZCI6NDR9.zrGlDeWVs60hIqi0Y4b1SooEa7Xq18Cmuoq8scp3LsA" \
     --request "POST" \
-    --data '{"userId": 40, "postId": 1, "voteType": 0}'
+    --data '{"userId": 43, "postId": 2, "voteType": 0}'
 
 curl http://localhost:8080/api/admin/posts --include --header "Authorization: Bearer <token>" --header "Content-Type: application/json" --request "POST" --data '{ "userId": 26, "body": "lorem ipsum this is a test comment" }'
 
@@ -43,7 +43,7 @@ https://seefnasrul.medium.com/create-your-first-go-rest-api-with-jwt-authenticat
 
 
 ### PSQL connection
-psql -h "localhost" -U "postgres" -p "15432" -d "postgres" -a -f "/Users/timchinenov/Dev/account-management/migrations/2_create_posts_table.sql"
+psql -h "localhost" -U "postgres" -p "5432" -d "postgres" -a -f "/Users/timchinenov/Dev/account-management/migrations/2_create_posts_table.sql"
 
 steps to migrate fly.io
     - proxy into server

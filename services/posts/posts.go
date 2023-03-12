@@ -95,12 +95,12 @@ func (p *postStore) Vote(c *gin.Context) {
 	}
 
 	// Check if this user has voted on this post before.
-	alreadyVotedQuery := `SELECT id, vote_type FROM user_post_votes WHERE user_id = $1 && post_id = $2`
+	alreadyVotedQuery := `SELECT id, vote_type FROM user_post_votes WHERE user_post_votes.user_id = $1 AND post_id = $2;`
 	alreadyVotedRow := p.db.QueryRowContext(context.Background(), alreadyVotedQuery, vote.UserId, vote.PostId)
 
 	var userPostVotesId uint = 0
 	var voteType uint
-	alreadyVotedRow.Scan(userPostVotesId, voteType)
+	alreadyVotedRow.Scan(&userPostVotesId, &voteType)
 
 	// If they have voted on this post before...
 	if userPostVotesId != 0 {
@@ -109,29 +109,39 @@ func (p *postStore) Vote(c *gin.Context) {
 			return
 		}
 
-		incrementVote := `downvote_count`
-		decrementVote := `upvote_count`
+		updateCountQuery := `UPDATE posts SET downvote_count = downvote_count + 1, upvote_count = upvote_count - 1 WHERE id = $1;`
 
 		// Increment the new vote type and decrement the former vote type.
 		if vote.VoteType == 1 {
-			incrementVote = `upvote_count`
-			decrementVote = `downvote_count`
+			updateCountQuery = `UPDATE posts SET upvote_count = upvote_count + 1, downvote_count = downvote_count - 1 WHERE id = $1;`
 		}
 
-		updateCountQuery := `UPDATE posts SET $1 = $1 + 1, $2 = $2 - 1 WHERE post_id = $3`
-		_, err := p.db.QueryContext(context.Background(), updateCountQuery, incrementVote, decrementVote, vote.PostId)
+		tx, err := p.db.Begin()
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
+		defer rollback(tx)
+
+		_, err = p.db.QueryContext(context.Background(), updateCountQuery, vote.PostId)
 
 		if err != nil {
-			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to update vote counts"})
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 			return
 		}
 
 		// Update the post to user mapping with the new vote type.
-		updateUserPostVotesQuery := `UPDATE user_post_votes SET vote_type = $1 WHERE user_id = $2 && post_id = $3`
-		_, err = p.db.QueryContext(context.Background(), updateUserPostVotesQuery, voteType, vote.UserId, vote.PostId)
+		updateUserPostVotesQuery := `UPDATE user_post_votes SET vote_type = $1 WHERE user_post_votes.user_id = $2 AND post_id = $3;`
+		_, err = p.db.QueryContext(context.Background(), updateUserPostVotesQuery, vote.VoteType, vote.UserId, vote.PostId)
 
 		if err != nil {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to update vote type"})
+			return
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 			return
 		}
 
@@ -142,21 +152,34 @@ func (p *postStore) Vote(c *gin.Context) {
 	}
 
 	// If they have not voted before...
-	updateCountQuery := `UPDATE posts SET downvote_count = downvote_count + 1 WHERE id = $1`
+	updateCountQuery := `UPDATE posts SET downvote_count = downvote_count + 1 WHERE id = $1;`
 	if vote.VoteType == 1 {
-		updateCountQuery = `UPDATE posts SET upvote_count = upvote_count + 1 WHERE id = $1`
+		updateCountQuery = `UPDATE posts SET upvote_count = upvote_count + 1 WHERE id = $1;`
 	}
 
+	tx, err := p.db.Begin()
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	defer rollback(tx)
+
 	// Increment the vote count of the posts.
-	_, err := p.db.QueryContext(context.Background(), updateCountQuery, vote.PostId)
+	_, err = p.db.QueryContext(context.Background(), updateCountQuery, vote.PostId)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
 	// Add a mapping between the user and the post
-	insertPostVoteMapping := `INSERT INTO user_post_votes (user_id, post_id, vote_type) VALUES ($1, $2, $3)`
+	insertPostVoteMapping := `INSERT INTO user_post_votes (user_id, post_id, vote_type) VALUES ($1, $2, $3);`
 	_, err = p.db.QueryContext(context.Background(), insertPostVoteMapping, vote.UserId, vote.PostId, vote.VoteType)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -217,8 +240,8 @@ func (p *postStore) Search(c *gin.Context) {
 
 func (p *postStore) getPostForUser(userId uint, postId uint) VoteResponse {
 	query := `SELECT posts.id, body, upvote_count, downvote_count, vote_type FROM user_post_votes
-		INNER JOIN posts ON post_id = posts.id
-		WHERE user_id = $1 && post_id = $2`
+		INNER JOIN posts ON post_id=posts.id
+		WHERE user_post_votes.user_id=$1 AND post_id=$2;`
 	row := p.db.QueryRowContext(context.Background(), query, userId, postId)
 
 	var voteResponse VoteResponse
@@ -240,4 +263,10 @@ func isCurrentUser(c *gin.Context, userId uint) bool {
 	}
 
 	return true
+}
+
+func rollback(tx *sql.Tx) {
+	if err := recover(); err != nil {
+		tx.Rollback()
+	}
 }
