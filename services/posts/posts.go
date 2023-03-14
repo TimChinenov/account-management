@@ -24,7 +24,6 @@ type Post struct {
 }
 
 type Vote struct {
-	UserId   uint `json:"userId"`
 	PostId   uint `json:"postId"`
 	VoteType uint `json:"voteType"`
 }
@@ -83,6 +82,13 @@ func (p *postStore) Create(c *gin.Context) {
 }
 
 func (p *postStore) Vote(c *gin.Context) {
+	userId, err := tokens.ExtractTokenId(c)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	var vote Vote
 
 	if err := c.BindJSON((&vote)); err != nil {
@@ -96,7 +102,7 @@ func (p *postStore) Vote(c *gin.Context) {
 
 	// Check if this user has voted on this post before.
 	alreadyVotedQuery := `SELECT id, vote_type FROM user_post_votes WHERE user_post_votes.user_id = $1 AND post_id = $2;`
-	alreadyVotedRow := p.db.QueryRowContext(context.Background(), alreadyVotedQuery, vote.UserId, vote.PostId)
+	alreadyVotedRow := p.db.QueryRowContext(context.Background(), alreadyVotedQuery, userId, vote.PostId)
 
 	var userPostVotesId uint = 0
 	var voteType uint
@@ -132,7 +138,7 @@ func (p *postStore) Vote(c *gin.Context) {
 
 		// Update the post to user mapping with the new vote type.
 		updateUserPostVotesQuery := `UPDATE user_post_votes SET vote_type = $1 WHERE user_post_votes.user_id = $2 AND post_id = $3;`
-		_, err = p.db.QueryContext(context.Background(), updateUserPostVotesQuery, vote.VoteType, vote.UserId, vote.PostId)
+		_, err = p.db.QueryContext(context.Background(), updateUserPostVotesQuery, vote.VoteType, userId, vote.PostId)
 
 		if err != nil {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Failed to update vote type"})
@@ -146,7 +152,7 @@ func (p *postStore) Vote(c *gin.Context) {
 		}
 
 		// Return the vote response
-		voteResponse := p.getPostForUser(vote.UserId, vote.PostId)
+		voteResponse := p.getPostForUser(userId, vote.PostId)
 		c.IndentedJSON(http.StatusOK, voteResponse)
 		return
 	}
@@ -173,7 +179,7 @@ func (p *postStore) Vote(c *gin.Context) {
 
 	// Add a mapping between the user and the post
 	insertPostVoteMapping := `INSERT INTO user_post_votes (user_id, post_id, vote_type) VALUES ($1, $2, $3);`
-	_, err = p.db.QueryContext(context.Background(), insertPostVoteMapping, vote.UserId, vote.PostId, vote.VoteType)
+	_, err = p.db.QueryContext(context.Background(), insertPostVoteMapping, userId, vote.PostId, vote.VoteType)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -185,7 +191,7 @@ func (p *postStore) Vote(c *gin.Context) {
 		return
 	}
 
-	voteResponse := p.getPostForUser(vote.UserId, vote.PostId)
+	voteResponse := p.getPostForUser(userId, vote.PostId)
 	c.IndentedJSON(http.StatusOK, voteResponse)
 	return
 }
