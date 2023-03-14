@@ -11,11 +11,12 @@ import (
 )
 
 type PostResponse struct {
-	Id            uint   `json:"id"`
-	Username      string `json:"username"`
-	Body          string `json:"body"`
-	UpvoteCount   int    `json:"upvoteCount"`
-	DownvoteCount int    `json:"downvoteCount"`
+	Id                  uint   `json:"id"`
+	Username            string `json:"username"`
+	Body                string `json:"body"`
+	UpvoteCount         int    `json:"upvoteCount"`
+	DownvoteCount       int    `json:"downvoteCount"`
+	CurrentUserVoteType int    `json:"currentUserVoteType"`
 }
 
 type Post struct {
@@ -197,6 +198,13 @@ func (p *postStore) Vote(c *gin.Context) {
 }
 
 func (p *postStore) Search(c *gin.Context) {
+	userId, err := tokens.ExtractTokenId(c)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	pageData, _ := c.GetQuery("page")
 	pageCountData, _ := c.GetQuery("page_count")
 
@@ -210,8 +218,9 @@ func (p *postStore) Search(c *gin.Context) {
 		pageCount = 10
 	}
 
-	query := `SELECT posts.id, username, body, upvote_count, downvote_count FROM posts
+	query := `SELECT posts.id, username, body, upvote_count, downvote_count, user_post_votes.user_id, user_post_votes.vote_type FROM posts
 		INNER JOIN users ON user_id = users.id
+		FULL JOIN user_post_votes ON post_id = posts.id
 		ORDER BY posts.id DESC
 		OFFSET $1
 		LIMIT $2;`
@@ -225,11 +234,18 @@ func (p *postStore) Search(c *gin.Context) {
 	posts := make([]PostResponse, 0)
 	for rows.Next() {
 		var post PostResponse
-		queryErr = rows.Scan(&post.Id, &post.Username, &post.Body, &post.UpvoteCount, &post.DownvoteCount)
+		var postVoteUserId sql.NullInt64
+		var voteType sql.NullInt64
+		var queryErr = rows.Scan(&post.Id, &post.Username, &post.Body, &post.UpvoteCount, &post.DownvoteCount, &postVoteUserId, &voteType)
 
 		if queryErr != nil {
 			c.IndentedJSON(http.StatusBadRequest, gin.H{"message": queryErr.Error()})
 			return
+		}
+
+		post.CurrentUserVoteType = -1
+		if postVoteUserId.Valid && int(postVoteUserId.Int64) == int(userId) {
+			post.CurrentUserVoteType = int(voteType.Int64)
 		}
 
 		posts = append(posts, post)
