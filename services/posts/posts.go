@@ -19,7 +19,7 @@ type PostResponse struct {
 	CurrentUserVoteType int    `json:"currentUserVoteType"`
 }
 
-type Post struct {
+type CreatePost struct {
 	UserId uint   `json:"userId"`
 	Body   string `json:"body"`
 }
@@ -60,19 +60,19 @@ func NewPostStore(db *sql.DB) PostStore {
 }
 
 func (p *postStore) Create(c *gin.Context) {
-	var newPost Post
+	var createPost CreatePost
 
-	if err := c.BindJSON((&newPost)); err != nil {
+	if err := c.BindJSON((&createPost)); err != nil {
 		return
 	}
 
-	if !isCurrentUser(c, newPost.UserId) {
+	if !isCurrentUser(c, createPost.UserId) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "not authorized to create posts"})
 		return
 	}
 
 	query := `INSERT INTO posts (user_id, body) VALUES ($1, $2);`
-	_, err := p.db.QueryContext(context.Background(), query, newPost.UserId, newPost.Body)
+	_, err := p.db.QueryContext(context.Background(), query, createPost.UserId, createPost.Body)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
