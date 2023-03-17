@@ -205,8 +205,8 @@ func (p *postStore) Search(c *gin.Context) {
 		return
 	}
 
-	pageData, _ := c.GetQuery("page")
-	pageCountData, _ := c.GetQuery("page_count")
+	pageData := c.DefaultQuery("page", "1")
+	pageCountData := c.DefaultQuery("page_count", "15")
 
 	page, err := strconv.Atoi(pageData)
 	if err != nil {
@@ -222,8 +222,8 @@ func (p *postStore) Search(c *gin.Context) {
 		INNER JOIN users ON user_id = users.id
 		FULL JOIN user_post_votes ON post_id = posts.id
 		ORDER BY posts.id DESC
-		OFFSET $1
-		LIMIT $2;`
+		OFFSET 45
+		LIMIT 15;`
 	rows, queryErr := p.db.QueryContext(context.Background(), query, (page-1)*pageCount, pageCount)
 
 	if queryErr != nil {

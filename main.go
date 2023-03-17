@@ -66,7 +66,7 @@ func main() {
 	protected.Use(middleware.JwtAuthMiddleware())
 	protected.GET("/user", userStore.CurrentUser)
 	protected.POST("/posts", postStore.Create)
-	protected.GET("/posts/:page/:page_count", postStore.Search)
+	protected.GET("/posts", postStore.Search)
 	protected.POST("/posts/vote", postStore.Vote)
 
 	router.Run(fmt.Sprintf("%s:8080", baseUrl))
